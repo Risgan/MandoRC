@@ -1,51 +1,42 @@
 #include "mbed.h"
-#include <RF24.h>
+// #include "Servo.h"
+#include "RF24L01.h"
+
+
+float map(float in, float inMin, float inMax, float outMin, float outMax);
+float map_limit(float in, float inMin, float inMax, float outMin, float outMax, float limitMin, float limitMax);
+
+
+Serial pc(PA_9,PA_10) ; //tx rx
 
 DigitalOut led(PC_13);
 
-RF24 radio(PA_7, PA_6, PA_5,PB_0,PA_4);
+DigitalIn SW1(PB_10);
+DigitalIn SW2(PB_11);
 
-Serial pc(USBTX,USBRX) ;
-int counter=0;
-const uint64_t address = 0x0A0A0A0A0ALL;
+AnalogIn M(A0);
+AnalogIn T(A1);
+AnalogIn A(A2);
+AnalogIn E(D13);
+
 int main()
 {
-    pc.printf("\n uno");
-    radio.begin();
-//    radio.setAutoAck(false);
-    radio.setDataRate(RF24_250KBPS);
-    radio.setChannel(90);
-    radio.setPALevel(RF24_PA_MAX);
-    radio.openReadingPipe(1, address);
-    radio.openWritingPipe(address);
-    radio.setRetries(15,15);
-    radio.startListening();
-//    radio.stopListening();  
-    pc.printf("\n%u",radio.getPALevel());
-    pc.printf("\n%u",radio.get_status());
-    pc.printf("\n ok");
 
-    while(1) {
+    while(true) {
+        led = !led;
+        // pc.printf(" percentage: %3.10f%%", a.read()*100.0f);
+        float x = map(M.read(),0.0f,1.0f,0.0f,100.0f);
+        pc.printf("M %3.2f \n\r",map(M.read(),0.0f,1.0f,0.0f,100.0f));
+        // wait(1.0f);
 
-         //led = sw;
-//        if(sw) {
-//            char s[50]="Hola Mundo";
-////            sprintf(yy, "%f",map(ain.read(),0.02,1,0,255));
-////            unsigned long motor_code=213;
-////            radio.write(&yy, sizeof(yy));
-//radio.write(&s, sizeof(s));
-//            pc.printf("\n %f %f", map(ain.read(),0.02,1,0,255),ain.read());
-//        }
-
-        z
-
-//        pc.printf(str);
-        counter++;
-        wait_ms(2000);
-
-//char s[50]="Hola Mundo\n";
-//radio.write(&s, sizeof(s));
-//pc.printf(s);
+        pc.printf("E %3.2f \n \r",map(E.read(),0.0f,1.0f,0.0f,100.0f));
+        // wait(1.0f);
+        pc.printf("A %3.2f \n \r",map(A.read(),0.0f,1.0f,0.0f,100.0f));
+        // wait(1.0f);
+        pc.printf("T %3.2f \n \r",map(T.read(),0.0f,1.0f,0.0f,100.0f));
+        // x = map_limit(a.read(),0.0f,1.0f,-1.0f,1.0f,-100,100);
+        // pc.printf(" %3.2f",x);
+        wait(1.0f);
     }
 }
 
@@ -58,5 +49,35 @@ float map(float in, float inMin, float inMax, float outMin, float outMax)
         return outMax;
     } else {
         return (in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+    }
+}
+
+float map_limit(float in, float inMin, float inMax, float outMin, float outMax, float limitMin, float limitMax)
+{
+    if(in<=inMin) {
+        if (limitMin > outMin) {
+            return limitMin;
+        }
+        else {
+            return outMin;
+        }
+    } else if(in>=inMax) {
+        if (limitMax < outMax) {
+            return limitMax;
+        }
+        else {
+            return outMax;
+        }
+    } else {
+        float data = (in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+        if (limitMin > data) {
+            return limitMin;
+        }
+        else if(limitMax < data){
+            return limitMax;
+        }
+        else {
+            return data;
+        }   
     }
 }
